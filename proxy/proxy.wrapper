@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# Mac Os X 
+#
+
+
+#
+# Init
+#
+PROXY_PATH=`pwd`
+ruby $PROXY_PATH/proxy.rb > $HOME/proxy.pac
+
+FILE="file://localhost$HOME/proxy.pac"
+PORT=8888
+SSH_SERVER=$2
+SSH="ssh -q -N -f -D $PORT $2"
+
+#
+# Start
+#
+Start()
+{ 
+  echo "ssh .........."
+  $SSH
+  echo "ssh ...done"
+	networksetup -setautoproxyurl AirPort $FILE
+	networksetup -setautoproxystate AirPort on
+	networksetup -setsocksfirewallproxystate AirPort off
+	osascript proxy.on
+}
+
+#
+# Stop
+#
+Stop()
+{
+  ps aux|grep "ssh -q -N -f -D 8888"|grep -v grep|awk {'print ($2)'}|xargs kill -9
+	networksetup -setsocksfirewallproxystate AirPort off
+	networksetup -setautoproxystate AirPort off
+	osascript proxy.off
+}
+
+
+#
+# Auto
+#
+All_proxy()
+{
+  networksetup -setsocksfirewallproxy AirPort localhost $PORT
+  networksetup -setsocksfirewallproxystate AirPort on
+  networksetup -setautoproxystate AirPort off
+	osascript proxy.on
+}
+
+#
+# Run
+#
+Run()
+{
+case $1 in
+  start  ) Start   ;;
+  stop   ) Stop    ;;
+  all) All_proxy ;;
+  *      ) echo "$0: unknown argument: $1";;
+esac
+}
+
+#
+# Run a phase based on the selector
+#
+Run $1
+
